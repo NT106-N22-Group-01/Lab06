@@ -37,6 +37,13 @@
 			labelUsername = new Label();
 			textBoxURL = new TextBox();
 			URL = new Label();
+			listViewDownload = new ListView();
+			FileName = new ColumnHeader();
+			Date = new ColumnHeader();
+			Size = new ColumnHeader();
+			groupBoxLog = new GroupBox();
+			richTextBoxLog = new RichTextBox();
+			groupBoxLog.SuspendLayout();
 			SuspendLayout();
 			// 
 			// buttonConnect
@@ -125,11 +132,59 @@
 			URL.TabIndex = 9;
 			URL.Text = "Server URL/IP";
 			// 
+			// listViewDownload
+			// 
+			listViewDownload.Columns.AddRange(new ColumnHeader[] { FileName, Date, Size });
+			listViewDownload.Location = new Point(12, 152);
+			listViewDownload.Name = "listViewDownload";
+			listViewDownload.Size = new Size(754, 418);
+			listViewDownload.TabIndex = 18;
+			listViewDownload.UseCompatibleStateImageBehavior = false;
+			listViewDownload.View = View.Details;
+			listViewDownload.DoubleClick += listViewDownload_DoubleClick;
+			// 
+			// FileName
+			// 
+			FileName.Text = "Name";
+			FileName.Width = 500;
+			// 
+			// Date
+			// 
+			Date.Text = "Date";
+			Date.Width = 165;
+			// 
+			// Size
+			// 
+			Size.Text = "Size";
+			Size.Width = 80;
+			// 
+			// groupBoxLog
+			// 
+			groupBoxLog.Controls.Add(richTextBoxLog);
+			groupBoxLog.Font = new Font("Open Sans Medium", 11F, FontStyle.Bold, GraphicsUnit.Point);
+			groupBoxLog.Location = new Point(12, 588);
+			groupBoxLog.Name = "groupBoxLog";
+			groupBoxLog.Size = new Size(1467, 239);
+			groupBoxLog.TabIndex = 19;
+			groupBoxLog.TabStop = false;
+			groupBoxLog.Text = "LOG";
+			// 
+			// richTextBoxLog
+			// 
+			richTextBoxLog.Dock = DockStyle.Fill;
+			richTextBoxLog.Location = new Point(3, 33);
+			richTextBoxLog.Name = "richTextBoxLog";
+			richTextBoxLog.Size = new Size(1461, 203);
+			richTextBoxLog.TabIndex = 0;
+			richTextBoxLog.Text = "";
+			// 
 			// FptClient
 			// 
 			AutoScaleDimensions = new SizeF(10F, 25F);
 			AutoScaleMode = AutoScaleMode.Font;
-			ClientSize = new Size(1502, 617);
+			ClientSize = new Size(1502, 843);
+			Controls.Add(groupBoxLog);
+			Controls.Add(listViewDownload);
 			Controls.Add(buttonConnect);
 			Controls.Add(textBoxPort);
 			Controls.Add(labelPort);
@@ -141,6 +196,7 @@
 			Controls.Add(URL);
 			Name = "FptClient";
 			Text = "Form1";
+			groupBoxLog.ResumeLayout(false);
 			ResumeLayout(false);
 			PerformLayout();
 		}
@@ -156,5 +212,11 @@
 		private Label labelUsername;
 		private TextBox textBoxURL;
 		private Label URL;
+		private ListView listViewDownload;
+		private ColumnHeader FileName;
+		private ColumnHeader Date;
+		private ColumnHeader Size;
+		private GroupBox groupBoxLog;
+		private RichTextBox richTextBoxLog;
 	}
 }
