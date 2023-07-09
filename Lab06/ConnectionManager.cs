@@ -1,136 +1,123 @@
 ﻿using System.Net;
-using System.Text.RegularExpressions;
+using System.Net.FtpClient;
 
 namespace Lab06
 {
 	public class ConnectionManager
 	{
+		FtpClient _client;
+
 		public event EventHandler<string> LogEvent;
 
-		private readonly List<FileObject> fileList = new List<FileObject>();
+		private List<FtpListItem> fileList = new List<FtpListItem>();
 
 		protected virtual void OnLogEvent(string message)
 		{
 			LogEvent?.Invoke(this, message);
 		}
 
-		public async Task<bool> ConnectToFTP(ConnectionSetting setting)
+		public bool Connect(ConnectionSetting setting)
 		{
-			FtpWebRequest request = CreateFtpRequest(setting.Uri, WebRequestMethods.Ftp.ListDirectoryDetails, setting.User, setting.Password);
+			_client = new FtpClient();
+			_client.Host = setting.Uri.Host;
+			_client.Credentials = new NetworkCredential(setting.User, setting.Password);
+			_client.DataConnectionType = FtpDataConnectionType.AutoPassive;
 
 			try
 			{
-				using (FtpWebResponse response = (FtpWebResponse)await request.GetResponseAsync())
-				using (Stream responseStream = response.GetResponseStream())
-				using (StreamReader reader = new StreamReader(responseStream))
-				{
-					string line;
-					while ((line = await reader.ReadLineAsync()) != null)
-					{
-						OnLogEvent(line);
+				OnLogEvent("Connecting...");
+				_client.Connect();
+				OnLogEvent("Connected, getting file list...");
 
-						FileObject fileObject = ParseResponseObjects(line, setting.Uri.AbsoluteUri);
-						if (!fileObject.IsDirectory)
-						{
-							fileList.Add(fileObject);
-						}
-						else
-						{
-							await TraverseFolder(setting, fileObject.Name);
-						}
-					}
+				FtpListItem[] items = _client.GetListing();
+				RetrieveFiles(setting.Uri.AbsolutePath);
+
+				foreach (FtpListItem item in items)
+				{
+					OnLogEvent($"Add {item.FullName}");
 				}
 
-				OnLogEvent("Downloading file list...");
 				return true;
 			}
-			catch (WebException ex)
+			catch (FtpCommandException ex)
 			{
 				OnLogEvent(ex.Message);
 				return false;
 			}
+			
 		}
 
-		private async Task TraverseFolder(ConnectionSetting setting, string folderName)
-		{
-			Uri subFolderUri = new Uri(setting.Uri, folderName);
-			FtpWebRequest request = CreateFtpRequest(subFolderUri, WebRequestMethods.Ftp.ListDirectoryDetails, setting.User, setting.Password);
-
-			try
-			{
-				using (FtpWebResponse response = (FtpWebResponse)await request.GetResponseAsync())
-				using (Stream responseStream = response.GetResponseStream())
-				using (StreamReader reader = new StreamReader(responseStream))
-				{
-					string line;
-					while ((line = await reader.ReadLineAsync()) != null)
-					{
-						OnLogEvent(line);
-
-						FileObject fileObject = ParseResponseObjects(line, subFolderUri.AbsoluteUri);
-						if (!fileObject.IsDirectory)
-						{
-							fileList.Add(fileObject);
-						}
-						else
-						{
-							await TraverseFolder(setting, Path.Combine(folderName, fileObject.Name));
-						}
-					}
-				}
-			}
-			catch (WebException ex)
-			{
-				OnLogEvent(ex.Message);
-			}
-		}
-
-		private FtpWebRequest CreateFtpRequest(Uri uri, string method, string user, string password)
-		{
-			FtpWebRequest request = (FtpWebRequest)WebRequest.Create(uri);
-			request.Method = method;
-			request.Credentials = new NetworkCredential(user, password);
-			request.KeepAlive = true;
-			request.UseBinary = true;
-			request.UsePassive = true;
-			return request;
-		}
-
-		public IEnumerable<FileObject> GetFiles()
-		{
-			return fileList.Where(file => !file.IsDirectory);
-		}
-
-		public IEnumerable<FileObject> GetAllFilesAndFolders()
+		public List<FtpListItem> GetFileList()
 		{
 			return fileList;
 		}
 
-		public FileObject ParseResponseObjects(string line, string path)
+		private void RetrieveFiles(string path)
 		{
-			string pattern = @"^(?<permissions>[drwx\-]+)\s+\d+\s+\w+\s+\w+\s+\s*(?<size>\d+)\s+(?<date>[A-Za-z]{3}\s+\d{1,2}(?:\s+\d{4})?)\s*(?<time>\d{1,2}:\d{1,2})?\s+(?<name>.+)$";
+			FtpListItem[] items = _client.GetListing(path);
 
-
-			Regex regex = new Regex(pattern, RegexOptions.Multiline);
-
-			MatchCollection matches = regex.Matches(line);
-
-			string permissions = matches[0].Groups["permissions"].Value;
-			int size = Int32.Parse(matches[0].Groups["size"].Value);
-			string date = matches[0].Groups["date"].Value;
-			string time = matches[0].Groups["time"].Value;
-			string name = matches[0].Groups["name"].Value;
-			bool isDirectory = permissions.StartsWith("d");
-
-			string dateTimeString = $"{date} {time}";
-
-			DateTime dateTime;
-			if (!DateTime.TryParse(dateTimeString, out dateTime))
+			foreach (FtpListItem item in items)
 			{
-				dateTime = DateTime.MinValue;
+				if (item.Type == FtpFileSystemObjectType.File)
+				{
+					fileList.Add(item);
+				}
+				else if (item.Type == FtpFileSystemObjectType.Directory)
+				{
+					RetrieveFiles(item.FullName);
+				}
 			}
+		}
 
-			return new FileObject(name, size, dateTime, isDirectory, path);
+		public async Task<bool> DownloadFile(FtpListItem file, string localFilePath)
+		{
+			try
+			{
+				OnLogEvent($"Downloading file: {localFilePath}");
+				string remoteFilePath = file.FullName;
+
+				using (Stream outputStream = File.Create(localFilePath))
+				{
+					using (Stream inputStream = await Task.Run(() => _client.OpenRead(remoteFilePath)))
+					{
+						byte[] buffer = new byte[2048000];
+						long totalBytes = inputStream.Length;
+						long downloadedBytes = 0;
+						int bytesRead;
+
+						while ((bytesRead = await inputStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+						{
+							await outputStream.WriteAsync(buffer, 0, bytesRead);
+							downloadedBytes += bytesRead;
+
+							int progress = (int)((double)downloadedBytes / totalBytes * 100);
+
+							string progressBar = GenerateProgressBar(progress, 100, 20);
+
+							OnLogEvent($"Downloading: {progressBar} {progress}%");
+						}
+					}
+				}
+
+				OnLogEvent($"Downloaded file: {localFilePath}");
+				return true;
+			}
+			catch (Exception ex)
+			{
+				OnLogEvent($"Error downloading file: {ex.Message}");
+				return false;
+			}
+		}
+
+		public string GenerateProgressBar(int progress, int total, int length)
+		{
+			int filledLength = (int)Math.Round(length * (double)progress / total);
+			int remainingLength = length - filledLength;
+
+			string progressBar = "[" + new string('#', filledLength) + new string('-', remainingLength) + "]";
+			string percentage = $"{progress}%";
+
+			return progressBar + " " + percentage;
 		}
 	}
 }
