@@ -17,22 +17,33 @@ namespace Lab06
 			_connectionSetting = new ConnectionSetting(uri, Int32.Parse(textBoxPort.Text), textBoxUsername.Text, textBoxPassword.Text);
 			_connectionManager = new ConnectionManager();
 			_connectionManager.LogEvent += LogEventHandler;
-			var IsConnected = _connectionManager.Connect(_connectionSetting);
+			var IsConnected = await _connectionManager.Connect(_connectionSetting);
+			buttonConnect.Enabled = false;
 			if (IsConnected)
 			{
-				List<FtpListItem> fileList = _connectionManager.GetFileList();
-				foreach (var item in fileList)
-				{
-					ListViewItem listItem = new ListViewItem(item.Name);
-					listItem.SubItems.Add(item.Modified.ToString());
-					listItem.SubItems.Add($"{((int)(item.Size / 1024))} KB");
-					listItem.Tag = item;
-					listViewDownload.Items.Add(listItem);
-				}
+				List<FtpListItem> fileList = await _connectionManager.GetFileList();
+				UpdateList(fileList);
+				buttonBrowse.Enabled = true;
+				buttonDisconnect.Enabled = true;
+				buttonRefresh.Enabled = true;
+			}
+			else
+			{
+				buttonConnect.Enabled = true;
 			}
 		}
 
-		private void listViewDownload_DoubleClick(object sender, EventArgs e)
+		private void buttonDisconnect_Click(object sender, EventArgs e)
+		{
+			_connectionManager.Disconnect();
+			listViewDownload.Items.Clear();
+			buttonConnect.Enabled = true;
+			buttonBrowse.Enabled = false;
+			buttonRefresh.Enabled = false;
+			buttonDisconnect.Enabled = false;
+		}
+
+		private async void listViewDownload_DoubleClick(object sender, EventArgs e)
 		{
 			if (listViewDownload.SelectedItems.Count > 0)
 			{
@@ -48,8 +59,29 @@ namespace Lab06
 					string localFilePath = saveFileDialog.FileName;
 
 
-					_connectionManager.DownloadFile(selectedFile, localFilePath);
+					var isDownloaded = await _connectionManager.DownloadFile(selectedFile, localFilePath);
 				}
+			}
+		}
+
+		private void buttonBrowse_Click(object sender, EventArgs e)
+		{
+			OpenFileDialog openFileDialog = new OpenFileDialog();
+			if (openFileDialog.ShowDialog() == DialogResult.OK)
+			{
+				richTextBoxUpload.Text = openFileDialog.FileName;
+				buttonUpload.Enabled = true;
+			}
+		}
+
+		private async void buttonUpload_Click(object sender, EventArgs e)
+		{
+			var isUploaded = await _connectionManager.UploadFile(richTextBoxUpload.Text, $"/{Path.GetFileName(richTextBoxUpload.Text)}");
+			if (isUploaded)
+			{
+				buttonUpload.Enabled = false;
+				List<FtpListItem> fileList = await _connectionManager.GetFileList();
+				UpdateList(fileList);
 			}
 		}
 
@@ -66,9 +98,30 @@ namespace Lab06
 				return new Uri(formattedUrl + ":" + port);
 			}
 		}
+
 		private void LogEventHandler(object sender, string message)
 		{
-			richTextBoxLog.Text += ("[Log] " + message + Environment.NewLine);
+			richTextBoxLog.AppendText("[Log] " + message + Environment.NewLine);
+			richTextBoxLog.ScrollToCaret();
+		}
+
+		private void UpdateList(List<FtpListItem> fileList)
+		{
+			listViewDownload.Items.Clear();
+			foreach (var item in fileList)
+			{
+				ListViewItem listItem = new ListViewItem(item.Name);
+				listItem.SubItems.Add(item.Modified.ToString());
+				listItem.SubItems.Add($"{((int)(item.Size / 1024))} KB");
+				listItem.Tag = item;
+				listViewDownload.Items.Add(listItem);
+			}
+		}
+
+		private async void buttonRefresh_Click(object sender, EventArgs e)
+		{
+			List<FtpListItem> fileList = await _connectionManager.GetFileList();
+			UpdateList(fileList);
 		}
 	}
 }

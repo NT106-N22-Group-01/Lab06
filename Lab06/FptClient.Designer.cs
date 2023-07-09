@@ -43,15 +43,20 @@
 			Size = new ColumnHeader();
 			groupBoxLog = new GroupBox();
 			richTextBoxLog = new RichTextBox();
+			buttonBrowse = new Button();
+			buttonUpload = new Button();
+			richTextBoxUpload = new RichTextBox();
+			buttonDisconnect = new Button();
+			buttonRefresh = new Button();
 			groupBoxLog.SuspendLayout();
 			SuspendLayout();
 			// 
 			// buttonConnect
 			// 
 			buttonConnect.Font = new Font("Open Sans Medium", 11F, FontStyle.Bold, GraphicsUnit.Point);
-			buttonConnect.Location = new Point(12, 12);
+			buttonConnect.Location = new Point(15, 12);
 			buttonConnect.Name = "buttonConnect";
-			buttonConnect.Size = new Size(118, 48);
+			buttonConnect.Size = new Size(155, 48);
 			buttonConnect.TabIndex = 17;
 			buttonConnect.Text = "Connect";
 			buttonConnect.UseVisualStyleBackColor = true;
@@ -178,11 +183,73 @@
 			richTextBoxLog.TabIndex = 0;
 			richTextBoxLog.Text = "";
 			// 
+			// buttonBrowse
+			// 
+			buttonBrowse.Enabled = false;
+			buttonBrowse.Font = new Font("Open Sans Medium", 11F, FontStyle.Bold, GraphicsUnit.Point);
+			buttonBrowse.Location = new Point(1011, 373);
+			buttonBrowse.Name = "buttonBrowse";
+			buttonBrowse.Size = new Size(118, 48);
+			buttonBrowse.TabIndex = 20;
+			buttonBrowse.Text = "Browse";
+			buttonBrowse.UseVisualStyleBackColor = true;
+			buttonBrowse.Click += buttonBrowse_Click;
+			// 
+			// buttonUpload
+			// 
+			buttonUpload.Enabled = false;
+			buttonUpload.Font = new Font("Open Sans Medium", 11F, FontStyle.Bold, GraphicsUnit.Point);
+			buttonUpload.Location = new Point(1187, 373);
+			buttonUpload.Name = "buttonUpload";
+			buttonUpload.Size = new Size(118, 48);
+			buttonUpload.TabIndex = 21;
+			buttonUpload.Text = "Upload";
+			buttonUpload.UseVisualStyleBackColor = true;
+			buttonUpload.Click += buttonUpload_Click;
+			// 
+			// richTextBoxUpload
+			// 
+			richTextBoxUpload.Enabled = false;
+			richTextBoxUpload.Location = new Point(793, 238);
+			richTextBoxUpload.Name = "richTextBoxUpload";
+			richTextBoxUpload.Size = new Size(683, 113);
+			richTextBoxUpload.TabIndex = 22;
+			richTextBoxUpload.Text = "";
+			// 
+			// buttonDisconnect
+			// 
+			buttonDisconnect.Enabled = false;
+			buttonDisconnect.Font = new Font("Open Sans Medium", 11F, FontStyle.Bold, GraphicsUnit.Point);
+			buttonDisconnect.Location = new Point(187, 12);
+			buttonDisconnect.Name = "buttonDisconnect";
+			buttonDisconnect.Size = new Size(155, 48);
+			buttonDisconnect.TabIndex = 23;
+			buttonDisconnect.Text = "Disconnect";
+			buttonDisconnect.UseVisualStyleBackColor = true;
+			buttonDisconnect.Click += buttonDisconnect_Click;
+			// 
+			// buttonRefresh
+			// 
+			buttonRefresh.Enabled = false;
+			buttonRefresh.Font = new Font("Open Sans Medium", 11F, FontStyle.Bold, GraphicsUnit.Point);
+			buttonRefresh.Location = new Point(359, 12);
+			buttonRefresh.Name = "buttonRefresh";
+			buttonRefresh.Size = new Size(155, 48);
+			buttonRefresh.TabIndex = 24;
+			buttonRefresh.Text = "Refresh";
+			buttonRefresh.UseVisualStyleBackColor = true;
+			buttonRefresh.Click += buttonRefresh_Click;
+			// 
 			// FptClient
 			// 
 			AutoScaleDimensions = new SizeF(10F, 25F);
 			AutoScaleMode = AutoScaleMode.Font;
 			ClientSize = new Size(1502, 843);
+			Controls.Add(buttonRefresh);
+			Controls.Add(buttonDisconnect);
+			Controls.Add(richTextBoxUpload);
+			Controls.Add(buttonUpload);
+			Controls.Add(buttonBrowse);
 			Controls.Add(groupBoxLog);
 			Controls.Add(listViewDownload);
 			Controls.Add(buttonConnect);
@@ -195,7 +262,7 @@
 			Controls.Add(textBoxURL);
 			Controls.Add(URL);
 			Name = "FptClient";
-			Text = "Form1";
+			Text = "FTP Client";
 			groupBoxLog.ResumeLayout(false);
 			ResumeLayout(false);
 			PerformLayout();
@@ -218,5 +285,10 @@
 		private ColumnHeader Size;
 		private GroupBox groupBoxLog;
 		private RichTextBox richTextBoxLog;
+		private Button buttonBrowse;
+		private Button buttonUpload;
+		private RichTextBox richTextBoxUpload;
+		private Button buttonDisconnect;
+		private Button buttonRefresh;
 	}
 }
